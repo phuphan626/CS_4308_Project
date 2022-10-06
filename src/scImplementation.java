@@ -2,6 +2,7 @@
     This is the scanner class. It has the scan function for scanning the input,
     and it will call the lex function to analyze the lexeme and return the token for that lexeme
  */
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -64,20 +65,34 @@ public class scImplementation {
                 put("^"," A caret");
             }
         };
+        // Check the token
         if(opCode.containsKey(str)){
+            result.append("|");
             result.append(str);
             result.append(" ");
-            result.append(opCode.get(str));
+            result.append("->"+opCode.get(str));
         }
-        if(specialChar.containsKey(str)){
+        else if(specialChar.containsKey(str)){
+            result.append("|");
             result.append(str);
             result.append(" ");
-            result.append(specialChar.get(str));
+            result.append("->"+specialChar.get(str));
         }
-        if(keywords.containsKey(str)){
+        else if(keywords.containsKey(str)){
+            result.append("|");
             result.append(str);
             result.append(" ");
-            result.append(keywords.get(str));
+            result.append("->"+keywords.get(str));
+        }
+        // Regex for the header files
+        Pattern headerFiles = Pattern.compile("[a-z]\\.h",Pattern.CASE_INSENSITIVE);
+        Matcher hfMatcher = headerFiles.matcher(str);
+        boolean hfFound = hfMatcher.find();
+        if(hfFound){
+            result.append("|");
+            result.append(str);
+            result.append(" ");
+            result.append(" -> a header file");
         }
         return result.toString();
     }

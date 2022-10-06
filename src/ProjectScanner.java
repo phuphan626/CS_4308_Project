@@ -8,14 +8,13 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Scanner;
 public class ProjectScanner {
     public static void main(String[] args){
         // Make an ArrayList of String to store data
-        String userInput;
+        // String userInput;
         ArrayList<String[]> strArray = new ArrayList<>();
-        Scanner sc = new Scanner(System.in);
+        // Scanner sc = new Scanner(System.in);
         scImplementation scAnalyzer = new scImplementation();
         try{
            // System.out.println("Please enter the file name for input: ");
@@ -36,7 +35,7 @@ public class ProjectScanner {
         }
         for(int i=0;i<strArray.size();++i){
             for(int j=0; j<strArray.get(i).length; j++){
-                System.out.print(scAnalyzer.scan(((strArray.get(i))[j])));
+                System.out.print(scAnalyzer.scan(((strArray.get(i))[j])));System.out.print(" ");
             }
             System.out.println(" ");
         }
