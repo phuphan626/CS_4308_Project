@@ -8,6 +8,7 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Scanner;
 public class ProjectScanner {
     public static void main(String[] args){
@@ -33,11 +34,26 @@ public class ProjectScanner {
             System.out.println("Please check the path. File not found!");
             e.printStackTrace();
         }
+        // Remove the comment
+        boolean comFound = false;
         for(int i=0;i<strArray.size();++i){
-            for(int j=0; j<strArray.get(i).length; j++){
-                System.out.print(scAnalyzer.scan(((strArray.get(i))[j])));System.out.print(" ");
+            for(int j=0;j<strArray.get(i).length;++j){
+                if((strArray.get(i))[j].equals("/*")){
+                    comFound = true;
+                }
+                if((strArray.get(i))[j].equals("*/")){
+                    comFound = false;
+                }
+                if(comFound == true){
+                    (strArray.get(i))[j] = "";
+                }
             }
-            System.out.println(" ");
+        }
+        for(int i=0;i<strArray.size();++i){
+            for(int j=0;j< strArray.get(i).length;++j){
+                scAnalyzer.lex((strArray.get(i))[j]);
+            }
+            System.out.println("");
         }
     }
 }
