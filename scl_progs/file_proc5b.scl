@@ -1,0 +1,270 @@
+description
+  This program reads a binary file sequentially, writes to an indexed file. 
+  Then reads the indexed file, which has the records ordered by key
+  using stu_ID as the primary key, and displays the data content.
+  It uses the PBL B-tree library to manage the key file.
+  Jose Garrido, updated April 10, 2022.
+*/  
+
+import "scl.h"
+import "indxF.h"     // for indexed files
+
+symbol FILENAME_LEN 60
+
+specifications
+// record of data file
+struct student_record is
+   define stu_ID of type long
+   define stu_name array[30] of type char
+   define stu_address array[30] of type char
+   define stu_phone array[10] of type char
+   define stu_email array[15] of type char  
+   define stu_total_credits of type long
+   define stu_tuition_fees of type double
+endstruct student_record
+
+struct student_recordi is                       // record of indexed file
+   define stu_ID array [8] of type char
+   define stu_name array [30] of type char
+   define stu_address array [30] of type char
+   define stu_phone array [10] of type char
+   define stu_email array [15] of type char  
+   define stu_total_credits of type long
+   define stu_tuition_fees of type double
+endstruct student_recordi
+
+definetype struct student_record student_t
+definetype struct student_recordi student_ti
+
+global declarations
+
+ files
+    file infile with infilename as "student.dat"   // input file
+	index file outfile with outfilename as "studentidx.dat"
+ variables
+    define update of type integer
+    // define ival of type integer
+
+    define strkeyslen array [6] of type char
+    define stu_ID of type long
+    define tuition_fees of type double
+    
+    define k of type integer
+    
+    define localstr array [ FILENAME_LEN ] of type char
+    define datalen of type integer
+    define key array[8] of type char
+    define keylen of type integer
+    define str_stu_ID array[8] of type char        // primary key
+    
+    define recno of type integer   // record number
+
+ structures
+   define student of type student_t        // memory student record
+   define studenti of type student_ti      // student record of indexed file
+   
+   // Using types from 'indxF.h'
+   define idxfilep pointer of type idxFileT      // indexed file
+   define paramstrp pointer of type precT        // structure for calling idx functions
+   
+implementations
+ 
+function main is 
+ variables  
+    define n of type integer
+    define num_read of type integer
+    define str_stu_tuition_fees array [20] of type char
+
+    define inreclen of type integer      // input record length
+    define totrecs of type integer       // total number of records
+    define end_file of type integer
+    
+    define ukeylen of type unsigned integer
+    define rc of type integer 
+    define str_recno array[8] of type char
+    define recnolen of type integer
+
+ structures
+    define studentptr pointer of type student_t
+    define studentptri pointer of type student_ti
+    
+	// Types from 'indxF.h'
+    define indexFstruct of type idxFileT      // structure for indexed file
+    define idxfp pointer of type idxFileT
+    define param_indexf of type precT       // param struct for indexf functions
+    define pindexfp pointer of type precT
+    
+ begin
+   
+    set studentptr = address student
+    set studentptri = address studenti
+    
+    set pindexfp = address param_indexf
+    // set idxfp = address indexFstruct  
+    
+    set update = 1       // write or update for indexed file
+    
+    display "Starting program"
+    
+	// open input file (a standard data file)
+    display "Open ", infilename 
+    set infile = fopen(infilename,"rb")       // open input file
+    if infile == NULL then
+       display "Error! opening input file"
+       // Program exits if the file pointer returns NULL.
+       exit
+    endif   
+	
+    display "Creating indexed file ", outfilename
+    
+    // create indexed file 
+    set rc = idxFCreate( idxfp, outfilename, NULL )     // create indexed file
+    if rc == 0
+    then   
+         display "Create indexed file ok!"                
+    else
+         display "Error creating indexed file ", outfilename
+		 exit
+    endif
+  
+    display "Open indexed file: ", outfilename              // open indexed file
+    set rc = idxFOpen( idxfp, "wb+", update)
+    if rc == 0 then
+       display "Open indexed file ok!"
+    else
+       display "Error opening indexed file ", outfilename
+    endif     
+     
+	// prepare for reading input file and writing to indexed file
+	
+    set recno = 1        // record number
+    set inreclen = sizeof(student_t)  // length input record
+    set datalen = sizeof(student_ti)  // length indexed record
+    
+    display "Input record length: ", inreclen
+    
+    set end_file = 0
+    
+    while (end_file == 0)       // loop if not EOF
+    do    
+       // read a record from input file
+       set num_read = fread(studentptr, inreclen, 1, infile) 
+       
+       set end_file = feof(infile)
+       // display "end_file: ", end_file
+           
+       set stu_ID = student.stu_ID   
+       display "Record read: ", recno, stu_ID
+       //        
+       call sprintf using str_recno, "%06d", recno   // convert to string
+       set recnolen = strlen(str_recno)
+       // display "recnolen: ", recnolen
+ 
+       call sprintf using str_stu_ID, "%06d", student.stu_ID
+       call sprintf using str_stu_tuition_fees, "%8.2f", student.stu_tuition_fees
+       display "stu_ID rec: ", str_stu_ID, str_stu_tuition_fees
+
+       // copy data record to data record of index (key) file 
+       call strcpy using studenti.stu_ID, str_stu_ID
+       call strcpy using studenti.stu_name, student.stu_name
+       call strcpy using studenti.stu_address, student.stu_address
+       call strcpy using studenti.stu_phone, student.stu_phone
+       call strcpy using studenti.stu_email, student.stu_email
+           
+       set studenti.stu_total_credits = student.stu_total_credits
+       set studenti.stu_tuition_fees = student.stu_tuition_fees            
+       // write record to indexed file     
+       display "write record ", recno, datalen     
+
+       call strcpy using key, str_stu_ID
+       set keylen = strlen(str_stu_ID)
+       call sprintf using str_recno, "%06d", recno    // record number
+            
+       // write index file      
+       display "Key ", key 
+       
+       set ukeylen = cast unsigned integer (keylen + 1)   
+       //
+	   // setup for writing to indexed file
+       set pindexfp->datarec = studentptri     // pointer to data record
+       set pindexfp->datareclen = datalen
+       set pindexfp->numblk = 1                // only one record at a time
+       set pindexfp->keyf = key            
+       set pindexfp->keyflen = ukeylen
+       set pindexfp->recno = str_recno
+       set pindexfp->recnolen = recnolen + 1
+      
+       // write record of indexed file
+       set rc = idxFWrite(idxfp, pindexfp)
+       if rc != 0 then
+           display "Error writing indexed file ", outfilename
+       endif
+       
+       display "processed record: ", recno
+       increment recno
+       display " "
+    endwhile
+
+    set totrecs = recno - 1 // total number of records processed
+	// set total records in indexed file
+	set total_records of idxfp = totrecs
+	
+    display "\n Total  records read and copied: ", totrecs
+              
+    // close indexed file
+    set rc =  idxFClose(idxfp) 
+             
+    // now open the indexed file for reading   
+    set update = 0          // read only       
+    display "Open indexed file "
+    set rc = idxFOpen( idxfp, "rb+", update)
+    if rc != 0 then
+       display "Error opening indexed file ", outfilename
+    endif     
+    
+    // Read the first record from data file and key file
+    set rc = idxFReadFirst(idxfp, pindexfp)
+    if rc != 0 then
+       display "Error reading indexed file ", outfilename
+    endif 
+
+    set studentptri = cast pointer student_ti pindexfp->datarec         // data record
+    
+    call strcpy using  str_stu_ID, studentptri->stu_ID
+    set tuition_fees = studentptri->stu_tuition_fees
+    display "First record read, stu_ID: ", str_stu_ID
+    display "Tuition and fees: ", tuition_fees
+
+   
+    // Read the rest of the records of the indexed file
+    set rc = 0
+    while rc == 0 do    
+       display "Next record "
+       // Read the next record from data file, by key value
+	   
+       set rc = idxFReadNext(idxfp, pindexfp)
+       if rc != 0 then
+          display "Error reading or EOF of indexed file ", outfilename
+          break
+       endif 
+    
+       set studentptri = cast pointer student_ti pindexfp->datarec        // data record
+    
+       call strcpy using  str_stu_ID, studentptri->stu_ID
+       display "Read stu_ID: ", str_stu_ID
+    
+       set tuition_fees = studentptri->stu_tuition_fees
+       display "Read Tuition and fees: ", tuition_fees
+    
+    endwhile
+
+    display "closing files"
+    
+    
+	// clode input data file
+	call fclose using infile
+	// close the indexed file 
+    set rc = idxFClose (idxfp)
+        
+    return 0
+endfun main

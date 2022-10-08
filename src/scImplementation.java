@@ -12,12 +12,13 @@ public class scImplementation {
     public scImplementation(){};
     // Symbol table
     public Map<String,String> reservedWords = new HashMap<>(){
-        {
+        {   // Arithmetic operations
             put("+","Addition operator");
             put("-","Subtraction operator");
             put("*","Multiplication operator");
             put("=","Assignment operator");
             put("/","Division operator");
+            // Reserved words
             put("set","Reserved words");
             put("import","Reserved words");
             put("endfun","Reserved words");
@@ -39,6 +40,38 @@ public class scImplementation {
             put("double","Reserved words");
             put("integer","Reserved words");
             put("float","Reserved words");
+            put("create","Reserved words");
+            put("return","Reserved words");
+            put("call","Reserved word");
+            put("using","Reserved words");
+            put("structures","Reserved words");
+            put("pointer","Reserved words");
+            put("NULL","Keyword");
+            put("global","Keyword");
+            put("constants","Keyword");
+            put("specifications","Keyword");
+            put("struct","Keyword");
+            put("endstruct","Keyword");
+            put("definetype","Keyword");
+            put("for","Reserved words");
+            put("while","Reserved words");
+            put("if","Reserved words");
+            put("else","Reserved words");
+            put("endif","Reserved words");
+            put("equal","Reserved words");
+            put("do","Reserved words");
+            put("endwhile","Reserved words");
+            put("endfor","Reserved words");
+            put("to","Reserved words");
+            put("true","Reserved words");
+            put("false","Reserved words");
+            put("forward","Reserved words");
+            put("declarations","Reserved words");
+            put("destroy","Reserved words");
+            put("parameters","Reserved words");
+            put("files","Reserved words");
+            put("address","Reserved words");
+            // Special characters
             put(","," A comma");
             put("."," A period");
             put(";"," A semicolon");
@@ -54,13 +87,12 @@ public class scImplementation {
             put("^"," A caret");
         }
     };
-    // Identifier table
+    // Identifier, numerical constant, and headerFile table
     Map<String,String> identifier = new HashMap<>();
     Map<String,String> numericalConst = new HashMap<>();
     Map<String,String> headerFile = new HashMap<>();
     // Lexeme analyzer method
-    public void lex(String str){
-        ArrayList<String> tokenList = new ArrayList<>();
+    private void lex(String str){
         // Use an associative array for key value pair
         Pattern headerFiles = Pattern.compile("[a-z]\\.h",Pattern.CASE_INSENSITIVE);
         Matcher hfMatcher = headerFiles.matcher(str);
@@ -68,25 +100,32 @@ public class scImplementation {
         Pattern numericalConstant = Pattern.compile("[0-9]+.[0-9]*",Pattern.CASE_INSENSITIVE);
         Matcher numMatcher = numericalConstant.matcher(str);
         boolean numFound = numMatcher.find();
-        // Regex for the header files
+        // Check if the lexeme is a reserved word, keyword, special character
         if(reservedWords.containsKey(str)){
             System.out.print(str);
             System.out.println("->"+reservedWords.get(str));
         }
+        // Check header file
         if(hfFound){
             headerFile.put(str,"Header file");
             System.out.print(str);
             System.out.print("->"+headerFile.get(str)+" ");
         }
+        // Check for numerical constant
         else if(numFound){
             numericalConst.put(str,"Numerical constant");
             System.out.print(str);
             System.out.print("->"+numericalConst.get(str)+" ");
         }
+        // Check for identifier
         else if(!reservedWords.containsKey(str) && !identifier.containsKey(str)){
             identifier.put(str,"Identifier");
             System.out.print(str);
             System.out.print("->"+identifier.get(str)+" ");
         }
+    }
+    // Scanner function
+    public void scanner(String str){
+        lex(str);
     }
 }

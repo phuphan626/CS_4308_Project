@@ -1,0 +1,1 @@
+cl file_proc6.c -o indxF.obj libpbl.lib

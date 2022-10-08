@@ -1,0 +1,1 @@
+gcc file_proc5b.c -o file_proc5b.exe indxF.o libpbl.a

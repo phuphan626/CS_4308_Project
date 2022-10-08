@@ -1,0 +1,12 @@
+
+implementations 
+
+function findLargestKey return type NodePtr
+     parameters Root of type NodePtr is
+begin 
+     if Root equal NULL or right of Root equal NULL  then
+     return Root
+  else
+	 return findLargestKey (right of Root)
+  endif
+endfun findLargestKey

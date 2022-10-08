@@ -1,0 +1,294 @@
+description
+  This program reads a binary file sequentially, writes to an indexed file
+  using stu_ID as the primary key, and display the data content.
+  It uses the PBL B-tree library to manage the key file.
+  Jose Garrido, April 29, 2020.
+*/  
+
+import <stdio.h>
+import <stdlib.h>
+import <string.h>
+
+import <errno.h>
+import <stdlib.h>
+import <ctype.h>
+
+// import "indx.h"     // for indexed files
+
+symbol FILENAME_LEN 60
+symbol F_EOF 0
+
+specifications
+
+struct student_struct is
+variables
+   define stu_ID of type long
+   define stu_name array[30] of type char
+   define stu_address array[30] of type char
+   define stu_phone array[10] of type char
+   define stu_email array[15] of type char  
+   define stu_total_credits of type long
+   define stu_tuition_fees of type double
+endstruct student_struct
+
+struct student_structi is                              // record of indexed file
+variables
+   define stu_ID array [9] of type char
+   define stu_name array [30] of type char
+   define stu_address array [30] of type char
+   define stu_phone array [10] of type char
+   define stu_email array [15] of type char  
+   define stu_total_credits of type long
+   define stu_tuition_fees of type double
+endstruct student_structi
+
+definetype struct student_struct student_t
+definetype struct student_structi student_ti
+
+global declarations
+
+files
+  file infile    // input file
+  file outfile   // output file
+
+ variables
+    define update of type integer
+    define ival of type integer
+    define len of type integer
+    define ptr pointer of type char
+    define strkeyslen array [6] of type char
+    define stu_ID of type long
+    
+    define k of type integer
+    
+    define localstr array [ FILENAME_LEN ] of type char
+    // define n of type integer
+    define datalen of type integer
+    define key array[8] of type char
+    define keylen of type integer
+    define str_stu_ID array[8] of type char  // primary key
+    
+    define infilename array [ 30 ] of type char
+    define outfilename array [ 30] of type char
+    define kfilename array [ 30] of type char
+    
+    define recno of type integer
+
+ structures
+   define student of struct student_struct 
+   define studenti of type student_ti          // student output file
+   define keyfile pointer of type IndexFile    // index file of outfilename data file
+   
+implementations
+ 
+function main is 
+ variables  
+    define i of type integer
+
+    define rdata array[30] of type byte
+    define str_stu_tuition_fees array [20] of type char
+    define reclen of type integer        // output data record length
+    define inreclen of type integer      // input record length
+    define bytepos of type integer       // file ptr rel position in bytes
+    define totrecs of type integer       // total number of records
+    define end_file of type integer
+    define num_read of type integer     // number of bytes read
+	
+	define uklen of type unsigned integer
+	define ukeylen of type unsigned integer
+	define rc of type integer 
+	define pbl_errno of type integer
+	define errno of type integer
+	define str_recno array[8] of type char
+
+ structures
+    define studentptr pointer of type student_t
+    define studentptri pointer of type student_ti
+    
+ begin
+   
+    set studentptr = address student
+    set studentptri = address studenti
+    
+    set update = 1       // yes, to write or update
+    
+    display "Starting"
+    
+    call strcpy using infilename, "student.dat"
+    call strcpy using outfilename, "studento.dat"
+    call strcpy using kfilename, "studentk.dat"       // index file
+       
+    set keyfile = indxCreate( kfilename, NULL )     // create key (index) file
+    if keyfile != NULL
+    then
+         display "ok!"                
+    else
+         display "error "
+    endif
+       
+    set keyfile = indxOpen( kfilename, update, NULL )
+    if keyfile != NULL then
+       display "ok!"
+    else
+       display "error "
+    endif
+     
+    display "Open ", infilename 
+    
+    set infile = fopen(infilename,"rb")       // input file
+    if infile == NULL then
+       display "Error! opening input file"
+       // Program exits if the file pointer returns NULL.
+       exit
+    endif
+   
+    display "Open ", outfilename              // output file
+    set outfile = fopen(outfilename,"wb+")
+    if outfile == NULL then
+       display "Error! opening output file"
+       // Program exits if the file pointer returns NULL.
+       exit 
+    endif
+   
+    set recno = 1        // record number
+    display "Record length: ", datalen
+    
+    set inreclen = sizeof(student_t)
+    set end_file = 1 
+   
+    while end_file != F_EOF        // while not EOF
+    do
+       // call strcpy using key, ""
+       // call strcpy using str_stu_ID, ""
+       // call strcpy using str_stu_tuition_fees, ""
+       
+       // read a record from input file	   
+       set num_read = fread(studentptr, inreclen, 1, infile) 
+       if num_read != inreclen then
+          display "error reading input file"
+          exit
+       endif     
+       // display "\nrecord read: ", recno, student.stu_ID, student.stu_name, student.stu_tuition_fees
+           
+       call sprintf using str_stu_ID, "%06d", student.stu_ID
+       call sprintf using str_stu_tuition_fees, "%8.2f", student.stu_tuition_fees
+       display "stu_ID rec: ", str_stu_ID, str_stu_tuition_fees
+ 
+       call strcpy using studenti.stu_ID, str_stu_ID
+       call strcpy using studenti.stu_name, student.stu_name
+       call strcpy using studenti.stu_address, student.stu_address
+       call strcpy using studenti.stu_phone, student.stu_phone
+       call strcpy using studenti.stu_email, student.stu_email
+ 	   	   
+       set studenti.stu_total_credits = student.stu_total_credits
+       set studenti.stu_tuition_fees = student.stu_tuition_fees
+            
+	   // prepare record of output file
+       call strcpy using rdata, str_stu_ID
+       call strcat using rdata, str_stu_tuition_fees
+	   set datalen = strlen(rdata)
+	   
+       display "fwrite ", recno, rdata, datalen
+	   // write record to output file
+       call fwrite using rdata, datalen, 1, outfile
+        		
+	   call strcpy using key, str_stu_ID
+       set keylen = strlen(str_stu_ID)
+	   call sprintf using str_recno, "%06d", recno    // record number
+			
+       // write index file		
+       display "Insert key ", key, keylen, str_recno 
+	   
+       set ukeylen = cast unsigned integer (keylen + 1)
+	   set uklen = cast unsigned (keylen+1)
+	   
+       set rc = indxInsert( keyfile, key, ukeylen, str_recno, uklen)
+	   
+       // call strcpy using rdata, ""
+       if rc == 0 then
+           display " pblKfInsert rc 0"            
+       else
+           display "Error after calling Insert", rc, pbl_errno, errno 
+       endif
+	   
+       increment recno  
+       display "processed record: ", recno
+       set end_file = feof(infile)
+    endwhile
+
+    set totrecs = recno - 1  // total number of records processed
+    display "Total  records: ", totrecs
+    // display "lminstr: ", lminstr, strlen(lminstr)
+     
+    set reclen = 6
+    set keylen = 6
+          
+    call indxClose using keyfile                        //close index file
+         
+    // now open the key file to start reading   
+    set update = 0                                // read only       
+    set keyfile = indxOpen( kfilename, update, NULL )   // open index file
+    if keyfile != NULL then
+       display "# pblKfOpen ok!"
+    else
+       display "# pbl_error "
+       exit
+
+    endif
+
+    // find first record of index file
+    set rc = indxFirst(keyfile, key, address keylen)
+    if rc < 0 then
+        display "Error pblKfFirst ", rc
+	endif
+    
+    // ok, now read	
+    set rc = indxRead(keyfile, str_recno, reclen)
+    if rc != 0 then
+        display "kfRead error ", rc
+    endif		
+    display "To read record: ", str_recno       
+                              
+    call sscanf using str_recno, "%d", address recno
+    display "After pblKfRead ", recno, str_recno
+            
+    // seek the record of the data file using offset
+    set bytepos = datalen * (recno - 1)
+              
+    call fseek using outfile, bytepos, SEEK_SET
+    display "fseek bytepos: ", bytepos, datalen
+	// now read record from data file
+    call fread using address rdata, datalen, 1, outfile     
+ 
+    display "after record read, rdata: ", rdata
+           
+    display "\n Next record "
+    set rc = indxNext(keyfile, key, address keylen)
+    if rc < 0 then
+          display "Error pblKfNext ", rc
+    endif
+    set rc = indxRead(keyfile, str_recno, reclen)
+    if rc != 0 then
+          display "kfRead error ", rc
+    endif
+      
+	display "To read rec ", str_recno, reclen
+    call sscanf using str_recno, "%d", address recno
+	
+    display "After pblKfRead ", recno, str_recno
+            
+    // seek the record on the data file using offset
+    set bytepos = datalen * (recno - 1)
+    call fseek using outfile, bytepos, SEEK_SET
+            
+    call fread using address rdata, datalen, 1, outfile    
+    display "after record read, data: ", rdata
+ 
+    display "closing files"
+    set rc = indxClose( keyfile )
+    set keyfile = cast pointer pblKeyFile_t  0
+      
+    call fclose using infile
+    call fclose using outfile 
+    return 0
+endfun main
